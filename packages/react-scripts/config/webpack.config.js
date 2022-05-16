@@ -177,8 +177,8 @@ module.exports = function (webpackEnv) {
         ? 'source-map'
         : false
       : isEnvDevelopment && 'cheap-module-source-map',
-    // These are the "entry points" to our application.
-    // This means they will be the "root" imports that are included in JS bundle.
+    // These are the 'entry points' to our application.
+    // This means they will be the 'root' imports that are included in JS bundle.
     entry:
       isEnvDevelopment && !shouldUseReactRefresh
         ? [
@@ -203,7 +203,11 @@ module.exports = function (webpackEnv) {
             // initialization, it doesn't blow up the WebpackDevServer client, and
             // changing JS code would still trigger a refresh.
           ]
-        : paths.appIndexJs,
+        : {
+          // 번들 파일 분리
+          ...paths.appPackageJson.appEntry,
+          app: [ paths.appIndexJs ], 
+        },
     output: {
       // The build folder.
       path: isEnvProduction ? paths.appBuild : undefined,
@@ -212,7 +216,7 @@ module.exports = function (webpackEnv) {
       // There will be one main bundle, and one file per asynchronous chunk.
       // In development, it does not produce real files.
       filename: isEnvProduction
-        ? 'static/js/[name].[contenthash:8].js'
+        ? 'static/js/[name].bundle.js`'
         : isEnvDevelopment && 'static/js/bundle.js',
       // TODO: remove this when upgrading to webpack 5
       futureEmitAssets: true,
@@ -222,7 +226,7 @@ module.exports = function (webpackEnv) {
         : isEnvDevelopment && 'static/js/[name].chunk.js',
       // webpack uses `publicPath` to determine where the app is being served from.
       // It requires a trailing slash, or the file assets will get an incorrect path.
-      // We inferred the "public path" (such as / or /my-project) from homepage.
+      // We inferred the 'public path' (such as / or /my-project) from homepage.
       publicPath: paths.publicUrlOrPath,
       // Point sourcemap entries to original disk location (format as URL on Windows)
       devtoolModuleFilenameTemplate: isEnvProduction
@@ -319,7 +323,7 @@ module.exports = function (webpackEnv) {
     },
     resolve: {
       // This allows you to set a fallback for where webpack should look for modules.
-      // We placed these paths second because we want `node_modules` to "win"
+      // We placed these paths second because we want `node_modules` to 'win'
       // if there are any conflicts. This matches Node resolution mechanism.
       // https://github.com/facebook/create-react-app/issues/253
       modules: ['node_modules', paths.appNodeModules].concat(
@@ -373,9 +377,9 @@ module.exports = function (webpackEnv) {
         // Disable require.ensure as it's not a standard language feature.
         { parser: { requireEnsure: false } },
         {
-          // "oneOf" will traverse all following loaders until one will
+          // 'oneOf' will traverse all following loaders until one will
           // match the requirements. When no loader matches it will fall
-          // back to the "file" loader at the end of the loader list.
+          // back to the 'file' loader at the end of the loader list.
           oneOf: [
             // TODO: Merge this config once `image/avif` is in the mime-db
             // https://github.com/jshttp/mime-db
@@ -388,7 +392,7 @@ module.exports = function (webpackEnv) {
                 name: 'static/media/[name].[hash:8].[ext]',
               },
             },
-            // "url" loader works like "file" loader except that it embeds assets
+            // 'url' loader works like 'file' loader except that it embeds assets
             // smaller than specified limit in bytes as data URLs to avoid requests.
             // A missing `test` is equivalent to a match.
             {
@@ -406,53 +410,22 @@ module.exports = function (webpackEnv) {
               include: paths.appSrc,
               loader: require.resolve('babel-loader'),
               options: {
-                customize: require.resolve(
-                  'babel-preset-react-app/webpack-overrides'
-                ),
                 presets: [
                   [
-                    require.resolve('babel-preset-react-app'),
+                    '@babel/preset-env',
                     {
-                      runtime: hasJsxRuntime ? 'automatic' : 'classic',
-                    },
+                      targets: '> 0.25%, not dead',
+                      corejs: 3,
+                      useBuiltIns: 'usage',
+                    }
                   ],
+                  ['@babel/preset-react'],
+                  ['@babel/preset-typescript']
                 ],
+                plugins: [['@babel/plugin-transform-runtime']],
                 // @remove-on-eject-begin
                 babelrc: false,
                 configFile: false,
-                // Make sure we have a unique cache identifier, erring on the
-                // side of caution.
-                // We remove this when the user ejects because the default
-                // is sane and uses Babel options. Instead of options, we use
-                // the react-scripts and babel-preset-react-app versions.
-                cacheIdentifier: getCacheIdentifier(
-                  isEnvProduction
-                    ? 'production'
-                    : isEnvDevelopment && 'development',
-                  [
-                    'babel-plugin-named-asset-import',
-                    'babel-preset-react-app',
-                    'react-dev-utils',
-                    'react-scripts',
-                  ]
-                ),
-                // @remove-on-eject-end
-                plugins: [
-                  [
-                    require.resolve('babel-plugin-named-asset-import'),
-                    {
-                      loaderMap: {
-                        svg: {
-                          ReactComponent:
-                            '@svgr/webpack?-svgo,+titleProp,+ref![path]',
-                        },
-                      },
-                    },
-                  ],
-                  isEnvDevelopment &&
-                    shouldUseReactRefresh &&
-                    require.resolve('react-refresh/babel'),
-                ].filter(Boolean),
                 // This is a feature of `babel-loader` for webpack (not Babel itself).
                 // It enables caching results in ./node_modules/.cache/babel-loader/
                 // directory for faster rebuilds.
@@ -501,11 +474,11 @@ module.exports = function (webpackEnv) {
                 inputSourceMap: shouldUseSourceMap,
               },
             },
-            // "postcss" loader applies autoprefixer to our CSS.
-            // "css" loader resolves paths in CSS and adds assets as dependencies.
-            // "style" loader turns CSS into JS modules that inject <style> tags.
+            // 'postcss' loader applies autoprefixer to our CSS.
+            // 'css' loader resolves paths in CSS and adds assets as dependencies.
+            // 'style' loader turns CSS into JS modules that inject <style> tags.
             // In production, we use MiniCSSExtractPlugin to extract that CSS
-            // to a file, but in development "style" loader enables hot editing
+            // to a file, but in development 'style' loader enables hot editing
             // of CSS.
             // By default we support CSS Modules with the extension .module.css
             {
@@ -575,15 +548,15 @@ module.exports = function (webpackEnv) {
                 'sass-loader'
               ),
             },
-            // "file" loader makes sure those assets get served by WebpackDevServer.
+            // 'file' loader makes sure those assets get served by WebpackDevServer.
             // When you `import` an asset, you get its (virtual) filename.
             // In production, they would get copied to the `build` folder.
-            // This loader doesn't use a "test" so it will catch all modules
+            // This loader doesn't use a 'test' so it will catch all modules
             // that fall through the other loaders.
             {
               loader: require.resolve('file-loader'),
-              // Exclude `js` files to keep "css" loader working as it injects
-              // its runtime that would otherwise be processed through "file" loader.
+              // Exclude `js` files to keep 'css' loader working as it injects
+              // its runtime that would otherwise be processed through 'file' loader.
               // Also exclude `html` and `json` extensions so they get processed
               // by webpacks internal loaders.
               exclude: [/\.(js|mjs|jsx|ts|tsx)$/, /\.html$/, /\.json$/],
@@ -592,7 +565,7 @@ module.exports = function (webpackEnv) {
               },
             },
             // ** STOP ** Are you adding a new loader?
-            // Make sure to add the new loader(s) before the "file" loader.
+            // Make sure to add the new loader(s) before the 'file' loader.
           ],
         },
       ],
@@ -632,8 +605,8 @@ module.exports = function (webpackEnv) {
         new InlineChunkHtmlPlugin(HtmlWebpackPlugin, [/runtime-.+[.]js/]),
       // Makes some environment variables available in index.html.
       // The public URL is available as %PUBLIC_URL% in index.html, e.g.:
-      // <link rel="icon" href="%PUBLIC_URL%/favicon.ico">
-      // It will be an empty string unless you specify "homepage"
+      // <link rel='icon' href='%PUBLIC_URL%/favicon.ico'>
+      // It will be an empty string unless you specify 'homepage'
       // in `package.json`, in which case it will be the pathname of that URL.
       new InterpolateHtmlPlugin(HtmlWebpackPlugin, env.raw),
       // This gives some necessary context to module not found errors, such as
@@ -680,10 +653,10 @@ module.exports = function (webpackEnv) {
           chunkFilename: 'static/css/[name].[contenthash:8].chunk.css',
         }),
       // Generate an asset manifest file with the following content:
-      // - "files" key: Mapping of all asset filenames to their corresponding
+      // - 'files' key: Mapping of all asset filenames to their corresponding
       //   output file so that tools can pick it up without having to parse
       //   `index.html`
-      // - "entrypoints" key: Array of files which are included in `index.html`,
+      // - 'entrypoints' key: Array of files which are included in `index.html`,
       //   can be used to reconstruct the HTML if necessary
       new ManifestPlugin({
         fileName: 'asset-manifest.json',
